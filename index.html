@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIBA Architecture — Designing Freely</title>
+  <meta name="description" content="TIBA Architecture — Ambitious design from Bali. Designing freely, without limitation.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+
+  <style>
+    /* ─────────────────────────────────────────
+       BRAND TOKENS
+    ───────────────────────────────────────── */
+    :root {
+      --stone:       #222323;
+      --ivory:       #F0EEDC;
+      --sunset:      #925638;
+      --river-green: #A3996A;
+      --dusk-blue:   #153647;
+      --moss:        #3E402B;
+      --font-head:   'Montserrat', sans-serif;
+      --font-body:   'EB Garamond', Georgia, serif;
+      --ease-unfold: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-slow:   cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* ─────────────────────────────────────────
+       RESET
+    ───────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-size: 16px; }
+    body {
+      background: var(--ivory);
+      color: var(--stone);
+      font-family: var(--font-head);
+      overflow-x: hidden;
+      cursor: none;
+    }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─────────────────────────────────────────
+       GRAIN OVERLAY
+    ───────────────────────────────────────── */
+    .grain {
+      position: fixed; inset: 0;
+      z-index: 9000;
+      pointer-events: none;
+      opacity: 0.038;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size: 300px 300px;
+      mix-blend-mode: multiply;
+    }
+
+    /* ─────────────────────────────────────────
+       SCROLL PROGRESS
+    ───────────────────────────────────────── */
+    #progress {
+      position: fixed; top: 0; left: 0;
+      height: 2px; width: 0%;
+      background: var(--sunset);
+      z-index: 8999;
+      transform-origin: left;
+      transition: none;
+    }
+
+    /* ─────────────────────────────────────────
+       CUSTOM CURSOR
+    ───────────────────────────────────────── */
+    .c-dot {
+      position: fixed; width: 5px; height: 5px;
+      background: var(--sunset); border-radius: 50%;
+      pointer-events: none; z-index: 9500;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.2s;
+    }
+    .c-ring {
+      position: fixed; width: 32px; height: 32px;
+      border: 1px solid rgba(34,35,35,0.5); border-radius: 50%;
+      pointer-events: none; z-index: 9500;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s var(--ease-unfold),
+                  height 0.4s var(--ease-unfold),
+                  border-color 0.3s;
+    }
+    .c-ring.hover { width: 56px; height: 56px; border-color: var(--sunset); }
+    .c-ring.dark { border-color: rgba(240,238,220,0.4); }
+
+    /* ─────────────────────────────────────────
+       PRELOADER
+    ───────────────────────────────────────── */
+    #preloader {
+      position: fixed; inset: 0;
+      background: var(--stone);
+      z-index: 8998;
+      display: flex;
+      align-items: center; justify-content: center;
+    }
+    .pre-logo {
+      width: 180px;
+      height: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0;
+      transform: scale(0.92);
+    }
+
+    /* ─────────────────────────────────────────
+       NAVIGATION
+    ───────────────────────────────────────── */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 500;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 1.6rem 3.5rem;
+      background: rgba(34,35,35,0.96);
+      backdrop-filter: blur(12px);
+      transition: padding 0.5s var(--ease-slow);
+    }
+    #nav.scrolled {
+      padding: 1rem 3.5rem;
+    }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo img {
+      height: 26px;
+      filter: invert(1) brightness(0.9);
+    }
+    .nav-links {
+      display: flex; align-items: center;
+      gap: 2.5rem; list-style: none;
+    }
+    .nav-links a {
+      font-size: 9.5px; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(240,238,220,0.65);
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--ivory); }
+    .nav-burger {
+      display: flex; flex-direction: column;
+      gap: 5px; cursor: none;
+      background: none; border: none; padding: 4px;
+    }
+    .nav-burger span {
+      display: block; width: 22px; height: 1px;
+      background: rgba(240,238,220,0.8);
+      transition: transform 0.45s var(--ease-unfold),
+                  opacity 0.3s, width 0.4s;
+    }
+    .nav-burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .nav-burger.open span:nth-child(2) { opacity: 0; width: 0; }
+    .nav-burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ─────────────────────────────────────────
+       MENU OVERLAY
+    ───────────────────────────────────────── */
+    #menu {
+      position: fixed; inset: 0;
+      background: var(--stone);
+      z-index: 499;
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 0 10vw;
+      pointer-events: none;
+      transform: translateY(-100%);
+      transition: transform 0.9s var(--ease-unfold);
+    }
+    #menu.open { pointer-events: all; transform: translateY(0); }
+    .menu-list { list-style: none; }
+    .menu-list li { overflow: hidden; padding: 0.15rem 0; }
+    .menu-list a {
+      display: block;
+      font-size: clamp(2.8rem, 6.5vw, 5.5rem);
+      font-weight: 700; line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--ivory);
+      transform: translateY(110%);
+      transition: transform 0.7s var(--ease-unfold), color 0.3s;
+    }
+    .menu-list a:hover { color: var(--sunset); }
+    #menu.open .menu-list a { transform: translateY(0); }
+    #menu.open .menu-list li:nth-child(1) a { transition-delay: 0.08s; }
+    #menu.open .menu-list li:nth-child(2) a { transition-delay: 0.13s; }
+    #menu.open .menu-list li:nth-child(3) a { transition-delay: 0.18s; }
+    #menu.open .menu-list li:nth-child(4) a { transition-delay: 0.23s; }
+    #menu.open .menu-list li:nth-child(5) a { transition-delay: 0.28s; }
+    #menu.open .menu-list li:nth-child(6) a { transition-delay: 0.33s; }
+    .menu-foot {
+      position: absolute; bottom: 3rem;
+      left: 10vw; right: 10vw;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.6s 0.5s, transform 0.6s 0.5s var(--ease-unfold);
+    }
+    #menu.open .menu-foot { opacity: 1; transform: translateY(0); }
+    .menu-foot a {
+      font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(240,238,220,0.4);
+      transition: color 0.3s;
+    }
+    .menu-foot a:hover { color: var(--river-green); }
+    .menu-foot-right {
+      font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(240,238,220,0.2);
+    }
+
+    /* ─────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────── */
+    #hero {
+      position: relative; height: 100vh;
+      overflow: hidden; cursor: none;
+    }
+    .hero-slide {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      opacity: 0;
+      will-change: transform, opacity;
+    }
+    .hero-slide:first-child { opacity: 1; }
+
+    .hero-veil {
+      position: absolute; inset: 0; z-index: 3;
+      background: linear-gradient(
+        180deg,
+        rgba(34,35,35,0.18) 0%,
+        transparent 35%,
+        rgba(34,35,35,0.55) 100%
+      );
+      pointer-events: none;
+    }
+
+    .hero-arrow {
+      position: absolute; top: 50%; z-index: 4;
+      transform: translateY(-50%);
+      background: none; border: none;
+      padding: 0;
+      cursor: none;
+      display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(240,238,220,0.35);
+      color: rgba(240,238,220,0.85);
+      overflow: visible;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: border-color 0.4s var(--ease-slow),
+                  color 0.4s var(--ease-slow),
+                  background 0.4s var(--ease-slow),
+                  transform 0.4s var(--ease-unfold);
+    }
+    .hero-arrow--prev { left: 2rem; }
+    .hero-arrow--next { right: 2rem; }
+    .hero-arrow:hover {
+      border-color: rgba(240,238,220,0.9);
+      color: rgba(240,238,220,1);
+      background: rgba(240,238,220,0.08);
+      transform: translateY(-50%) scale(1.08);
+    }
+    .hero-arrow--prev:hover { transform: translateY(-50%) scale(1.08) translateX(-2px); }
+    .hero-arrow--next:hover { transform: translateY(-50%) scale(1.08) translateX(2px); }
+    .hero-arrow svg { display: block; width: 16px; height: 16px; }
+
+    .hero-counter {
+      position: absolute; bottom: 2rem; right: 2.5rem;
+      z-index: 4;
+      font-size: 8.5px; letter-spacing: 0.22em;
+      color: rgba(240,238,220,0.45);
+      font-family: var(--font-head);
+      pointer-events: none;
+    }
+
+    /* Hero progress dots */
+    .hero-dots {
+      position: absolute; bottom: 2rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .hero-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(240,238,220,0.3);
+      cursor: none;
+      transition: background 0.4s var(--ease-slow),
+                  width 0.4s var(--ease-unfold);
+    }
+    .hero-dot.active {
+      width: 20px; border-radius: 2px;
+      background: rgba(240,238,220,0.75);
+    }
+
+    /* Auto-advance progress ring */
+    .hero-arrow-progress {
+      position: absolute; inset: -1px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero-arrow-progress circle {
+      fill: none;
+      stroke: rgba(146,86,56,0.7);
+      stroke-width: 1.5;
+      stroke-dasharray: 150;
+      stroke-dashoffset: 150;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+
+    /* ─────────────────────────────────────────
+       WORKS SECTION
+    ───────────────────────────────────────── */
+    #works { padding: 8rem 5rem; }
+
+    .sec-head {
+      display: flex; align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(34,35,35,0.1);
+      margin-bottom: 3.5rem;
+    }
+    .sec-label {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .sec-count {
+      font-size: 10px; letter-spacing: 0.12em;
+      color: var(--river-green);
+    }
+
+    /* 3 × 2 uniform grid */
+    .works-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+    }
+    .wcard {
+      position: relative; overflow: hidden;
+      cursor: none; height: 460px;
+    }
+    .wcard-img {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      transition: transform 1s var(--ease-slow);
+    }
+    .wcard:hover .wcard-img { transform: scale(1.04); }
+
+    /* Always-on overlay; deepens on hover */
+    .wcard-veil {
+      position: absolute; inset: 0;
+      background: rgba(34,35,35,0.28);
+      transition: background 0.7s var(--ease-slow);
+    }
+    .wcard:hover .wcard-veil { background: rgba(34,35,35,0.54); }
+
+    /* Info block — centred, slides up on hover */
+    .wcard-info {
+      position: absolute; inset: 0;
+      z-index: 2;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem;
+      transform: translateY(10px);
+      transition: transform 0.65s var(--ease-unfold);
+    }
+    .wcard:hover .wcard-info { transform: translateY(0); }
+
+    .wcard-cat {
+      font-size: 8px; font-weight: 500;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(240,238,220,0.5); margin-bottom: 0.6rem;
+    }
+    .wcard-name {
+      font-size: 1.05rem; font-weight: 600;
+      color: var(--ivory); line-height: 1.2;
+      letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .wcard-yr {
+      font-size: 8px; letter-spacing: 0.2em;
+      color: rgba(240,238,220,0.35); margin-top: 0.5rem;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.5s 0.08s, transform 0.5s 0.08s var(--ease-unfold);
+    }
+    .wcard:hover .wcard-yr { opacity: 1; transform: translateY(0); }
+
+    .works-cta {
+      margin-top: 3rem; display: flex; align-items: center;
+    }
+    .works-cta a {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--sunset);
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .works-cta a::after {
+      content: '';
+      display: inline-block; width: 36px; height: 1px;
+      background: var(--sunset);
+      transition: width 0.45s var(--ease-unfold);
+    }
+    .works-cta a:hover::after { width: 64px; }
+
+    /* ─────────────────────────────────────────
+       PHILOSOPHY QUOTE
+    ───────────────────────────────────────── */
+    #philosophy {
+      position: relative;
+      padding: 11rem 5rem;
+      overflow: hidden;
+      text-align: center;
+    }
+    .phil-bg {
+      position: absolute; inset: 0;
+      background-image: url('./Project%20Images/88%20East/Fathom-16-scaled.jpg');
+      background-size: cover; background-position: center;
+      opacity: 0.08;
+    }
+    .phil-mark {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.04; pointer-events: none;
+      width: 280px;
+    }
+    .phil-inner {
+      position: relative; z-index: 2;
+      max-width: 820px; margin: 0 auto;
+    }
+    .phil-glyph {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 7rem; line-height: 0.5;
+      color: var(--sunset); opacity: 0.55;
+      margin-bottom: 2rem;
+      user-select: none;
+    }
+    .phil-quote {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+      line-height: 1.8;
+      color: var(--stone);
+      letter-spacing: 0.005em;
+    }
+    .phil-attr {
+      margin-top: 2.5rem;
+      font-size: 9.5px; font-weight: 500;
+      letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--river-green);
+    }
+
+    /* ─────────────────────────────────────────
+       FIVE ELEMENTS  (strip accordion)
+    ───────────────────────────────────────── */
+    #elements { background: var(--stone); }
+    .el-intro {
+      padding: 5rem 5rem 2.8rem;
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .el-intro-label {
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--river-green);
+    }
+    .el-intro-count {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(240,238,220,0.22);
+    }
+    .el-strips {
+      display: flex;
+      height: 72vh; min-height: 480px;
+      overflow: hidden;
+    }
+    .el-strip {
+      position: relative;
+      flex: 1; min-width: 0; overflow: hidden;
+      cursor: pointer;
+      transition: flex 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      border-right: 1px solid rgba(240,238,220,0.06);
+    }
+    .el-strip:last-child { border-right: none; }
+    .el-strips:has(.el-strip:hover) .el-strip { flex: 0.35; }
+    .el-strips .el-strip:hover { flex: 4.6; }
+    .el-bg {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      transition: transform 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .el-strip:hover .el-bg { transform: scale(1.04); }
+    .el-veil {
+      position: absolute; inset: 0; z-index: 1;
+      transition: opacity 0.55s ease;
+    }
+    .el-fire  .el-veil { background: linear-gradient(160deg, rgba(146,86,56,0.78) 0%, rgba(80,36,16,0.85) 100%); }
+    .el-earth .el-veil { background: linear-gradient(160deg, rgba(62,64,43,0.82) 0%,  rgba(30,32,20,0.88) 100%); }
+    .el-air   .el-veil { background: linear-gradient(160deg, rgba(163,153,106,0.70) 0%, rgba(100,92,60,0.78) 100%); }
+    .el-water .el-veil { background: linear-gradient(160deg, rgba(21,54,71,0.80) 0%,  rgba(8,28,42,0.88) 100%); }
+    .el-ether .el-veil { background: linear-gradient(160deg, rgba(34,35,35,0.84) 0%,  rgba(10,10,10,0.90) 100%); }
+    /* Ghost watermark — slides in when strip expands */
+    .el-ghost {
+      position: absolute; z-index: 2;
+      bottom: -0.05em; left: -0.04em;
+      font-size: clamp(4.5rem, 11vw, 10rem);
+      font-weight: 800; letter-spacing: -0.04em;
+      color: rgba(240,238,220,0.042);
+      user-select: none; pointer-events: none;
+      line-height: 1; white-space: nowrap;
+      opacity: 0;
+      transform: translateX(-12px);
+      transition: opacity 0.5s 0.2s, transform 0.6s 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .el-strip:hover .el-ghost { opacity: 1; transform: translateX(0); }
+    /* Vertical label — shown when strip is collapsed */
+    .el-label-v {
+      position: absolute; z-index: 4;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      white-space: nowrap;
+      font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.32em; text-transform: uppercase;
+      color: rgba(240,238,220,0.72);
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .el-strip:hover .el-label-v { opacity: 0; }
+    /* Expanded body content */
+    .el-body {
+      position: absolute; z-index: 3;
+      bottom: 3rem; left: 3.2rem; right: 3.2rem;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.45s 0.18s, transform 0.5s 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .el-strip:hover .el-body { opacity: 1; transform: translateY(0); }
+    .el-sym {
+      font-size: 1.5rem;
+      color: rgba(240,238,220,0.42);
+      display: block; margin-bottom: 1.1rem;
+      line-height: 1;
+    }
+    .el-title {
+      display: block;
+      font-family: var(--font-head);
+      font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+      font-weight: 300;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(240,238,220,0.92);
+      margin-bottom: 0.9rem;
+      line-height: 1;
+    }
+    .el-quote {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: clamp(1rem, 1.3vw, 1.35rem);
+      color: rgba(240,238,220,0.88);
+      max-width: 320px; margin: 0;
+      line-height: 1.62;
+    }
+    .el-num {
+      display: block; margin-top: 1.5rem;
+      font-size: 8.5px; font-weight: 500;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(240,238,220,0.28);
+    }
+    /* Accent line at bottom of active strip */
+    .el-strip::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--sunset);
+      transition: width 0.6s 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 5;
+    }
+    .el-strip:hover::after { width: 100%; }
+
+    /* ─────────────────────────────────────────
+       ABOUT TIBA
+    ───────────────────────────────────────── */
+    #about {
+      background: var(--ivory);
+      padding: 10rem 5rem;
+      overflow: hidden;
+    }
+    .about-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      align-items: center;
+    }
+    .about-photo-col {
+      position: relative;
+      padding-right: 7rem;
+    }
+    .about-photo-frame {
+      position: relative;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+    }
+    .about-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+    /* placeholder shown when no img src */
+    .about-photo-frame.is-placeholder {
+      background: var(--stone);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .about-photo-frame.is-placeholder::after {
+      content: 'Photo';
+      font-family: var(--font-head);
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: rgba(240,238,220,0.2);
+    }
+    /* thin accent line left edge */
+    .about-photo-frame::before {
+      content: '';
+      position: absolute;
+      top: 2.5rem; left: -1.5rem;
+      width: 1px; height: 60%;
+      background: var(--river-green);
+      opacity: 0.55;
+      z-index: 1;
+    }
+    .about-text-col {
+      padding-left: 1rem;
+    }
+    .about-eyebrow {
+      display: block;
+      font-family: var(--font-head);
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--river-green);
+      margin-bottom: 1.8rem;
+    }
+    .about-name {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: clamp(2.8rem, 4vw, 4.2rem);
+      line-height: 1.05;
+      color: var(--stone);
+      margin: 0 0 0.4rem;
+      font-weight: 400;
+    }
+    .about-title {
+      font-family: var(--font-head);
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      color: rgba(34,35,35,0.38);
+      margin-bottom: 3rem;
+    }
+    .about-divider {
+      width: 2.5rem;
+      height: 1px;
+      background: var(--sunset);
+      margin-bottom: 2.6rem;
+    }
+    .about-bio {
+      font-family: var(--font-body);
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: rgba(34,35,35,0.78);
+      margin: 0 0 2.4rem;
+      max-width: 480px;
+    }
+    .about-pullquote {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 1.18rem;
+      line-height: 1.6;
+      color: var(--stone);
+      border-left: 2px solid var(--sunset);
+      padding-left: 1.4rem;
+      margin: 0;
+    }
+    @media (max-width: 860px) {
+      .about-inner {
+        grid-template-columns: 1fr;
+        gap: 4rem;
+      }
+      .about-photo-col { padding-right: 0; }
+      .about-photo-frame { max-width: 420px; }
+      .about-photo-frame::before { display: none; }
+    }
+
+    /* ─────────────────────────────────────────
+       MATERIALS
+    ───────────────────────────────────────── */
+    #materials {
+      padding: 6rem 5rem 0;
+      background: var(--stone);
+      overflow: hidden;
+    }
+    #materials .sec-head {
+      border-bottom-color: rgba(240,238,220,0.1);
+      margin-bottom: 3rem;
+    }
+    #materials .sec-label { color: rgba(240,238,220,0.38); }
+    #materials .sec-count  { color: rgba(163,153,106,0.52); }
+    .mat-stage {
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      min-height: 560px;
+      gap: 2px;
+    }
+    .mat-panel {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+      cursor: none;
+      transition: flex 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mat-panel:hover { flex: 4.5; }
+    .mat-panel-bg {
+      position: absolute;
+      inset: -6%;
+      background-size: cover;
+      background-position: center;
+      filter: grayscale(0.8) brightness(0.32) saturate(0.5);
+      transition: filter 1s ease, transform 0.9s ease;
+      will-change: transform, filter;
+    }
+    .mat-panel:hover .mat-panel-bg {
+      filter: grayscale(0.05) brightness(0.6) saturate(1.1);
+    }
+    .mat-panel-grad {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(34,35,35,0.95) 0%,
+        rgba(34,35,35,0.2)  50%,
+        rgba(34,35,35,0)   100%
+      );
+      z-index: 1;
+    }
+    .mat-panel-spot {
+      position: absolute; inset: 0; z-index: 2;
+      opacity: 0;
+      background: radial-gradient(
+        circle 320px at var(--sx, 50%) var(--sy, 80%),
+        rgba(146,86,56,0.22) 0%, transparent 70%
+      );
+      transition: opacity 0.6s ease;
+      pointer-events: none;
+    }
+    .mat-panel:hover .mat-panel-spot { opacity: 1; }
+    .mat-panel-content {
+      position: absolute; inset: 0; z-index: 3;
+      padding: 2rem 2rem 2.5rem;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+    }
+    .mat-panel-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .mat-pnum {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.28em;
+      color: rgba(240,238,220,0.22);
+    }
+    .mat-ptag {
+      font-size: 8px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.3em 0.75em;
+      border: 1px solid rgba(163,153,106,0);
+      color: rgba(163,153,106,0);
+      transition: color 0.5s ease 0.3s, border-color 0.5s ease 0.3s;
+      white-space: nowrap;
+    }
+    .mat-panel:hover .mat-ptag {
+      color: rgba(163,153,106,0.8);
+      border-color: rgba(163,153,106,0.32);
+    }
+    .mat-panel-bottom { display: flex; flex-direction: column; gap: 0.8rem; }
+    .mat-pname {
+      font-size: clamp(2rem, 2.5vw, 3.5rem);
+      font-weight: 700;
+      color: var(--ivory);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      white-space: nowrap;
+      transition: font-size 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mat-panel:hover .mat-pname {
+      font-size: clamp(4rem, 6vw, 8.5rem);
+    }
+    .mat-pdetail {
+      max-height: 0; overflow: hidden;
+      opacity: 0; transform: translateY(10px);
+      transition:
+        max-height 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s,
+        opacity    0.5s ease 0.25s,
+        transform  0.5s ease 0.25s;
+    }
+    .mat-panel:hover .mat-pdetail {
+      max-height: 140px; opacity: 1; transform: translateY(0);
+    }
+    .mat-pline {
+      width: 24px; height: 1px;
+      background: rgba(163,153,106,0.45);
+      margin-bottom: 0.9rem;
+      transition: width 0.6s var(--ease-unfold) 0.38s;
+    }
+    .mat-panel:hover .mat-pline { width: 50px; }
+    .mat-pquote {
+      font-family: var(--font-body);
+      font-style: italic; font-size: 0.95rem;
+      color: rgba(240,238,220,0.65);
+      line-height: 1.65; max-width: 300px;
+    }
+
+    /* ─────────────────────────────────────────
+       CTA — BEGIN HERE
+    ───────────────────────────────────────── */
+    #cta {
+      position: relative;
+      padding: 8rem 5rem 4rem;
+      background: var(--stone);
+      overflow: hidden;
+    }
+    .cta-bg {
+      position: absolute; inset: 0;
+      background: url('./Project%20Images/88%20East/Fathom-16-scaled.jpg') center/cover no-repeat;
+      opacity: 0.055; filter: grayscale(1);
+      pointer-events: none;
+    }
+    .cta-inner { position: relative; z-index: 2; }
+    .cta-header {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      align-items: end;
+      gap: 4rem;
+      padding-bottom: 5rem;
+    }
+    .cta-col-label {
+      font-size: 8px; font-weight: 600;
+      letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--river-green);
+      display: block; margin-bottom: 1.2rem;
+    }
+    .cta-coord {
+      font-size: clamp(1.1rem, 1.5vw, 1.55rem);
+      font-weight: 300; letter-spacing: 0.05em;
+      color: var(--ivory); line-height: 1.4;
+    }
+    .cta-loc {
+      margin-top: 0.5rem;
+      font-size: 0.72rem; letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(240,238,220,0.32);
+    }
+    .cta-tagline-col { text-align: center; }
+    .cta-tagline {
+      font-family: var(--font-body);
+      font-size: clamp(3.2rem, 5.5vw, 6.5rem);
+      font-weight: 400; color: var(--ivory);
+      line-height: 1.05; letter-spacing: -0.01em;
+    }
+    .cta-tagline em {
+      color: rgba(240,238,220,0.4);
+      font-style: italic;
+    }
+    .cta-avail {
+      font-size: 0.8rem; letter-spacing: 0.1em;
+      color: rgba(240,238,220,0.38);
+      line-height: 1.85; text-align: right;
+      text-transform: uppercase;
+    }
+    .cta-rule {
+      position: relative; z-index: 2;
+      height: 1px;
+      background: rgba(163,153,106,0.2);
+    }
+    .cta-actions {
+      position: relative; z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .cta-act {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 2.8rem 3rem;
+      border-right: 1px solid rgba(163,153,106,0.15);
+      border-bottom: 1px solid rgba(163,153,106,0.12);
+      text-decoration: none;
+      position: relative; overflow: hidden;
+    }
+    .cta-act:last-child { border-right: none; }
+    .cta-act::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(146,86,56,0.04);
+      opacity: 0; transition: opacity 0.4s ease;
+    }
+    .cta-act:hover::after { opacity: 1; }
+    .cta-act-left {
+      display: flex; align-items: center; gap: 1.3rem;
+    }
+    .cta-act-icon {
+      width: 22px; height: 22px;
+      color: var(--river-green); flex-shrink: 0;
+    }
+    .cta-act-name {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--ivory); display: block;
+    }
+    .cta-act-sub {
+      font-size: 9px; letter-spacing: 0.12em;
+      color: rgba(240,238,220,0.3);
+      margin-top: 0.3rem; display: block;
+    }
+    .cta-act-cta {
+      font-size: 9.5px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(240,238,220,0.28);
+      transition: color 0.35s ease, transform 0.35s ease;
+      display: inline-block;
+    }
+    .cta-act:hover .cta-act-cta {
+      color: var(--river-green);
+      transform: translateX(5px);
+    }
+
+    /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+    #footer {
+      padding: 2.5rem 5rem;
+      background: var(--ivory);
+      border-top: 1px solid rgba(163,153,106,0.35);
+      display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .footer-logo img { height: 20px; opacity: 0.6; }
+    .footer-mid {
+      font-size: 9.5px; letter-spacing: 0.18em;
+      color: rgba(34,35,35,0.35);
+    }
+    .footer-right {
+      font-size: 9.5px; letter-spacing: 0.12em;
+      color: rgba(34,35,35,0.3);
+    }
+
+    /* ─────────────────────────────────────────
+       REVEAL STATES
+    ───────────────────────────────────────── */
+    .rv { opacity: 0; transform: translateY(36px); }
+    .rv-fade { opacity: 0; }
+
+    /* ─────────────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────────────── */
+    @media (max-width: 900px) {
+      #nav { padding: 1.4rem 2rem; }
+      #nav.scrolled { padding: 0.9rem 2rem; }
+      .nav-links { display: none; }
+
+      #works, #philosophy, #materials, #cta { padding-left: 2rem; padding-right: 2rem; }
+      .works-grid { grid-template-columns: repeat(2, 1fr); }
+      .wcard { height: 340px; }
+      #footer { padding: 2rem; }
+      .mat-stage { height: auto; min-height: unset; }
+      .cta-header { grid-template-columns: 1fr; gap: 2rem; }
+      .cta-avail { text-align: left; }
+    }
+    @media (max-width: 600px) {
+      .works-grid { grid-template-columns: 1fr; }
+      .mat-stage { height: auto; }
+      .mat-panel { height: 200px; flex: none !important; }
+      .mat-panel:hover { flex: none !important; }
+      .mat-pname { font-size: 2.2rem !important; }
+      .mat-pdetail { max-height: 120px !important; opacity: 1 !important; transform: none !important; }
+      .mat-ptag { color: rgba(163,153,106,0.8) !important; border-color: rgba(163,153,106,0.32) !important; }
+      .cta-actions { grid-template-columns: 1fr; }
+      .cta-act { border-right: none; }
+      .cta-act:last-child { border-bottom: none; }
+      #footer { flex-direction: column; gap: 0.75rem; text-align: center; }
+      .menu-list a { font-size: 2.5rem; }
+    }
+    @media (hover: none) {
+      .c-dot, .c-ring { display: none; }
+      body { cursor: auto; }
+      a, button { cursor: pointer; }
+      .mat-panel { cursor: pointer; }
+      .mat-pdetail { max-height: 120px !important; opacity: 1 !important; transform: none !important; }
+      .mat-ptag { color: rgba(163,153,106,0.8) !important; border-color: rgba(163,153,106,0.32) !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── GRAIN ─── -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ─── PROGRESS ─── -->
+<div id="progress" aria-hidden="true"></div>
+
+<!-- ─── CURSOR ─── -->
+<div class="c-dot" id="cDot" aria-hidden="true"></div>
+<div class="c-ring" id="cRing" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════
+     PRELOADER
+════════════════════════════════════════ -->
+<div id="preloader" aria-hidden="true">
+  <img class="pre-logo" src="./TIBA_FINAL_LOGO_PORTRAIT%20(2).png" alt="TIBA">
+</div>
+
+<!-- ════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════ -->
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <img src="./TIBA_FINAL_LOGO_LANDSCAPE%20(3)%20(13).png" alt="TIBA Architecture">
+  </a>
+  <ul class="nav-links">
+    <li><a href="#works">Works</a></li>
+    <li><a href="#philosophy">Philosophy</a></li>
+    <li><a href="#elements">Process</a></li>
+    <li><a href="#materials">Materials</a></li>
+    <li><a href="#cta">Contact</a></li>
+  </ul>
+  <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ════════════════════════════════════════
+     MENU OVERLAY
+════════════════════════════════════════ -->
+<div id="menu" role="dialog" aria-modal="true" aria-label="Site navigation">
+  <ul class="menu-list">
+    <li><a href="#works"      class="m-link">Works</a></li>
+    <li><a href="#philosophy" class="m-link">Philosophy</a></li>
+    <li><a href="#elements"   class="m-link">The Process</a></li>
+    <li><a href="#materials"  class="m-link">Materials</a></li>
+    <li><a href="#cta"        class="m-link">Contact</a></li>
+    <li><a href="https://wa.me/6281239442648" target="_blank" rel="noopener" class="m-link">Start a Project</a></li>
+  </ul>
+  <div class="menu-foot">
+    <div style="display:flex;gap:2rem;">
+      <a href="https://wa.me/6281239442648" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="https://instagram.com/tibaliving" target="_blank" rel="noopener">@tibaliving</a>
+    </div>
+    <span class="menu-foot-right">Bali, Indonesia</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     HERO
+════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-slide" style="background-image:url('./Project%20Images/House%20SJ/MAIN.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('./Project%20Images/Tiba%20Tennessee/infinity_pool_8K_upscaled.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('./Project%20Images/Tiba%20Tennessee/living_room_8K_upscaled.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('./Project%20Images/88%20East/Fathom-11-scaled%202.jpg')"></div>
+  <div class="hero-slide" style="background-image:url('./Project%20Images/Casa%20Tiba/1B.jpeg')"></div>
+  <div class="hero-slide" style="background-image:url('./Project%20Images/Beachclub/5%202.jpg')"></div>
+
+  <div class="hero-veil"></div>
+
+  <button class="hero-arrow hero-arrow--prev" aria-label="Previous image">
+    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="11,3 5,9 11,15"/>
+    </svg>
+  </button>
+  <button class="hero-arrow hero-arrow--next" aria-label="Next image">
+    <svg class="hero-arrow-progress" viewBox="0 0 52 52" style="position:absolute;inset:-2px;width:calc(100%+4px);height:calc(100%+4px);pointer-events:none;">
+      <circle cx="26" cy="26" r="23" id="hero-ring"/>
+    </svg>
+    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="7,3 13,9 7,15"/>
+    </svg>
+  </button>
+
+  <div class="hero-dots" id="heroDots"></div>
+  <span class="hero-counter" id="heroCounter">01 / 06</span>
+</section>
+
+<!-- ════════════════════════════════════════
+     FEATURED DESIGNS
+════════════════════════════════════════ -->
+<section id="works">
+  <div class="sec-head rv">
+    <span class="sec-label">Featured Designs</span>
+    <span class="sec-count">(06)</span>
+  </div>
+
+  <div class="works-grid">
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/Tiba%20Tennessee/infinity_pool_8K_upscaled.jpg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Residential</p>
+        <h3 class="wcard-name">Tiba Tennessee</h3>
+        <p class="wcard-yr">2024</p>
+      </div>
+    </article>
+
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/House%20SJ/MAIN.jpg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Residential</p>
+        <h3 class="wcard-name">House SJ</h3>
+        <p class="wcard-yr">2023</p>
+      </div>
+    </article>
+
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/88%20East/Fathom-11-scaled%202.jpg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Hospitality</p>
+        <h3 class="wcard-name">88 East</h3>
+        <p class="wcard-yr">2023</p>
+      </div>
+    </article>
+
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/Casa%20Tiba/1B.jpeg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Residential</p>
+        <h3 class="wcard-name">Casa Tiba</h3>
+        <p class="wcard-yr">2023</p>
+      </div>
+    </article>
+
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/Beachclub/5%202.jpg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Hospitality</p>
+        <h3 class="wcard-name">The Beachclub</h3>
+        <p class="wcard-yr">2022</p>
+      </div>
+    </article>
+
+    <article class="wcard">
+      <div class="wcard-img" style="background-image:url('./Project%20Images/Tiba%20Townhouse/townhouse-feature.jpg')"></div>
+      <div class="wcard-veil"></div>
+      <div class="wcard-info">
+        <p class="wcard-cat">Commercial</p>
+        <h3 class="wcard-name">Tiba Townhouse</h3>
+        <p class="wcard-yr">2022</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="works-cta rv">
+    <a href="#cta">Start a Project</a>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     PHILOSOPHY QUOTE
+════════════════════════════════════════ -->
+<section id="philosophy">
+  <div class="phil-bg"></div>
+
+  <!-- Logomark watermark -->
+  <svg class="phil-mark" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="50" cy="10" r="7" fill="var(--stone)"/>
+    <rect x="22" y="22" width="56" height="8" rx="1" fill="var(--stone)"/>
+    <path d="M36 30 L26 52 L40 52 Q50 44 60 52 L74 52 L64 30 Z" fill="var(--stone)"/>
+    <rect x="14" y="58" width="72" height="8" rx="1" fill="var(--stone)"/>
+    <path d="M24 66 L16 86 L36 86 Q50 78 64 86 L84 86 L76 66 Z" fill="var(--stone)"/>
+    <rect x="6" y="92" width="88" height="8" rx="1" fill="var(--stone)"/>
+    <path d="M8 100 L4 118 L96 118 L92 100 Z" fill="var(--stone)"/>
+  </svg>
+
+  <div class="phil-inner">
+    <span class="phil-glyph" aria-hidden="true">"</span>
+    <blockquote class="phil-quote rv">
+      Ambitious design, to me, means designing freely — without limitation. When we slow down, we begin to truly see… the light, the textures, the atmosphere around us. Nature is my greatest source of inspiration — from the warmth of timber to the fluidity of curves that shape our spaces. I believe design should remain playful. Rest when needed. Stay curious. Push boundaries. Never accept "no" as the final answer — ask why not and how can we.
+    </blockquote>
+    <p class="phil-attr rv" style="--d:0.25s">— TIBA Architecture</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FIVE ELEMENTS
+════════════════════════════════════════ -->
+<section id="elements">
+
+  <div class="el-intro rv">
+    <span class="el-intro-label">Five Elements</span>
+    <span class="el-intro-count">The forces that shape every space</span>
+  </div>
+
+  <div class="el-strips">
+
+    <!-- 01 · Fire -->
+    <div class="el-strip el-fire">
+      <div class="el-bg" style="background-image:url('./Project%20Images/Casa%20Tiba/1B.jpeg')"></div>
+      <div class="el-veil"></div>
+      <span class="el-ghost">Fire</span>
+      <span class="el-label-v">01 — Fire</span>
+      <div class="el-body">
+        <span class="el-sym">△</span>
+        <span class="el-title">Fire</span>
+        <blockquote class="el-quote">"Light shapes every surface"</blockquote>
+        <span class="el-num">01 — Fire</span>
+      </div>
+    </div>
+
+    <!-- 02 · Earth -->
+    <div class="el-strip el-earth">
+      <div class="el-bg" style="background-image:url('./Project%20Images/Tiba%20Hills/2804153C-3938-4286-97AC-1263E5451BC3.jpg')"></div>
+      <div class="el-veil"></div>
+      <span class="el-ghost">Earth</span>
+      <span class="el-label-v">02 — Earth</span>
+      <div class="el-body">
+        <span class="el-sym">□</span>
+        <span class="el-title">Earth</span>
+        <blockquote class="el-quote">"The ground beneath holds memory"</blockquote>
+        <span class="el-num">02 — Earth</span>
+      </div>
+    </div>
+
+    <!-- 03 · Air -->
+    <div class="el-strip el-air">
+      <div class="el-bg" style="background-image:url('./Project%20Images/88%20East/Fathom-11-scaled%202.jpg')"></div>
+      <div class="el-veil"></div>
+      <span class="el-ghost">Air</span>
+      <span class="el-label-v">03 — Air</span>
+      <div class="el-body">
+        <span class="el-sym">○</span>
+        <span class="el-title">Air</span>
+        <blockquote class="el-quote">"Wind moves through the trees and your thoughts"</blockquote>
+        <span class="el-num">03 — Air</span>
+      </div>
+    </div>
+
+    <!-- 04 · Water -->
+    <div class="el-strip el-water">
+      <div class="el-bg" style="background-image:url('./Project%20Images/Tiba%20Tennessee/infinity_pool_8K_upscaled.png')"></div>
+      <div class="el-veil"></div>
+      <span class="el-ghost">Water</span>
+      <span class="el-label-v">04 — Water</span>
+      <div class="el-body">
+        <span class="el-sym">〜</span>
+        <span class="el-title">Water</span>
+        <blockquote class="el-quote">"Flow without force"</blockquote>
+        <span class="el-num">04 — Water</span>
+      </div>
+    </div>
+
+    <!-- 05 · Ether -->
+    <div class="el-strip el-ether">
+      <div class="el-bg" style="background-image:url('./Project%20Images/Casa%20Tiba/5B.jpeg')"></div>
+      <div class="el-veil"></div>
+      <span class="el-ghost">Ether</span>
+      <span class="el-label-v">05 — Ether</span>
+      <div class="el-body">
+        <span class="el-sym">✦</span>
+        <span class="el-title">Ether</span>
+        <blockquote class="el-quote">"Space is the element we design with most"</blockquote>
+        <span class="el-num">05 — Ether</span>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════
+     ABOUT TIBA
+════════════════════════════════════════ -->
+<section id="about">
+  <div class="about-inner">
+
+    <div class="about-photo-col rv-fade">
+      <div class="about-photo-frame is-placeholder">
+        <!-- Replace is-placeholder class and add <img> once photo is available -->
+        <!-- <img src="./william-dair.jpg" alt="William Dair"> -->
+      </div>
+    </div>
+
+    <div class="about-text-col">
+      <span class="about-eyebrow rv" style="--d:0s">About Tiba</span>
+      <h2 class="about-name rv" style="--d:0.08s">William Dair</h2>
+      <p class="about-title rv" style="--d:0.14s">Founder &amp; Principal Architect</p>
+      <div class="about-divider rv" style="--d:0.2s"></div>
+      <p class="about-bio rv" style="--d:0.26s">
+        William Dair founded TIBA with a single conviction: that architecture should be an act of
+        freedom. Trained across Europe and immersed in the living landscape of Bali, he brings a
+        philosophy rooted in nature, material honesty, and the quiet power of space. Every project
+        begins not with a brief, but with a question — <em>what does this place want to become?</em>
+      </p>
+      <blockquote class="about-pullquote rv" style="--d:0.34s">
+        "When we slow down, we begin to truly see — the light, the textures, the atmosphere around
+        us. Nature is my greatest source of inspiration."
+      </blockquote>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     MATERIALS & CRAFTSMANSHIP
+════════════════════════════════════════ -->
+<section id="materials">
+  <div class="sec-head rv">
+    <span class="sec-label">Materials &amp; Craftsmanship</span>
+    <span class="sec-count">04 Materials</span>
+  </div>
+
+  <div class="mat-stage">
+
+    <div class="mat-panel">
+      <div class="mat-panel-bg" style="background-image:url('./Project%20Images/Tiba%20Hills/2804153C-3938-4286-97AC-1263E5451BC3.jpg')"></div>
+      <div class="mat-panel-grad"></div>
+      <div class="mat-panel-spot"></div>
+      <div class="mat-panel-content">
+        <div class="mat-panel-top">
+          <span class="mat-pnum">01</span>
+          <span class="mat-ptag">Permanence</span>
+        </div>
+        <div class="mat-panel-bottom">
+          <h3 class="mat-pname">Raw Stone</h3>
+          <div class="mat-pdetail">
+            <div class="mat-pline"></div>
+            <p class="mat-pquote">"Stone anchors every composition in geological time — permanence through texture."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mat-panel">
+      <div class="mat-panel-bg" style="background-image:url('./Project%20Images/House%20SJ/MAIN.jpg')"></div>
+      <div class="mat-panel-grad"></div>
+      <div class="mat-panel-spot"></div>
+      <div class="mat-panel-content">
+        <div class="mat-panel-top">
+          <span class="mat-pnum">02</span>
+          <span class="mat-ptag">Warmth</span>
+        </div>
+        <div class="mat-panel-bottom">
+          <h3 class="mat-pname">Natural Wood</h3>
+          <div class="mat-pdetail">
+            <div class="mat-pline"></div>
+            <p class="mat-pquote">"The warmth that welcomes you home — timber breathes with the space it inhabits."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mat-panel">
+      <div class="mat-panel-bg" style="background-image:url('./Project%20Images/88%20East/Fathom-16-scaled.jpg')"></div>
+      <div class="mat-panel-grad"></div>
+      <div class="mat-panel-spot"></div>
+      <div class="mat-panel-content">
+        <div class="mat-panel-top">
+          <span class="mat-pnum">03</span>
+          <span class="mat-ptag">Atmosphere</span>
+        </div>
+        <div class="mat-panel-bottom">
+          <h3 class="mat-pname">Light</h3>
+          <div class="mat-pdetail">
+            <div class="mat-pline"></div>
+            <p class="mat-pquote">"Light is the material we layer most carefully — atmosphere is everything."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mat-panel">
+      <div class="mat-panel-bg" style="background-image:url('./Project%20Images/Tiba%20Tennessee/infinity_pool_8K_upscaled.jpg')"></div>
+      <div class="mat-panel-grad"></div>
+      <div class="mat-panel-spot"></div>
+      <div class="mat-panel-content">
+        <div class="mat-panel-top">
+          <span class="mat-pnum">04</span>
+          <span class="mat-ptag">Organic</span>
+        </div>
+        <div class="mat-panel-bottom">
+          <h3 class="mat-pname">Nature</h3>
+          <div class="mat-pdetail">
+            <div class="mat-pline"></div>
+            <p class="mat-pquote">"Every site holds a landscape to honour — nature is not backdrop, it is the design."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     CONTACT — BEGIN HERE
+════════════════════════════════════════ -->
+<section id="cta">
+  <div class="cta-bg" aria-hidden="true"></div>
+
+  <div class="cta-inner">
+    <div class="cta-header rv">
+      <div>
+        <span class="cta-col-label">Location</span>
+        <p class="cta-coord">8°21'S<br>115°05'E</p>
+        <p class="cta-loc">Bali, Indonesia</p>
+      </div>
+      <div class="cta-tagline-col">
+        <h2 class="cta-tagline">Let's design<br><em>something</em><br>that endures.</h2>
+      </div>
+      <div>
+        <span class="cta-col-label">Studio</span>
+        <p class="cta-avail">Available for<br>projects worldwide.</p>
+      </div>
+    </div>
+
+    <div class="cta-rule"></div>
+
+    <div class="cta-actions">
+      <a href="https://wa.me/6281239442648" target="_blank" rel="noopener" class="cta-act rv">
+        <div class="cta-act-left">
+          <svg class="cta-act-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          </svg>
+          <div>
+            <span class="cta-act-name">WhatsApp</span>
+            <span class="cta-act-sub">+62 812 3944 2648</span>
+          </div>
+        </div>
+        <span class="cta-act-cta">Start a Conversation →</span>
+      </a>
+      <a href="https://instagram.com/tibaliving" target="_blank" rel="noopener" class="cta-act rv" style="--d:0.1s">
+        <div class="cta-act-left">
+          <svg class="cta-act-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+          <div>
+            <span class="cta-act-name">Instagram</span>
+            <span class="cta-act-sub">@tibaliving</span>
+          </div>
+        </div>
+        <span class="cta-act-cta">Follow the Work →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer id="footer">
+  <div class="footer-logo">
+    <img src="./TIBA_FINAL_LOGO_LANDSCAPE%20(3)%20(13).png" alt="TIBA Architecture">
+  </div>
+  <span class="footer-mid">design.tibaliving.com</span>
+  <span class="footer-right">© 2026 TIBA Architecture</span>
+</footer>
+
+<!-- ════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script>
+  // ── Lenis smooth scroll ──
+  const lenis = new Lenis({
+    duration: 1.4,
+    easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothWheel: true
+  });
+  gsap.registerPlugin(ScrollTrigger);
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(time => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+
+  // ── Custom cursor ──
+  const dot  = document.getElementById('cDot');
+  const ring = document.getElementById('cRing');
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let rx = mx, ry = my;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+  });
+  (function loop() {
+    rx += (mx - rx) * 0.11;
+    ry += (my - ry) * 0.11;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(loop);
+  })();
+
+  // Cursor state on interactive elements
+  document.querySelectorAll('a, button, .wcard, .mat-panel').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+  });
+  // Dark cursor on dark sections
+  document.querySelectorAll('#elements, #materials, #cta').forEach(sec => {
+    ScrollTrigger.create({
+      trigger: sec,
+      start: 'top 50%', end: 'bottom 50%',
+      onEnter:    () => ring.classList.add('dark'),
+      onLeave:    () => ring.classList.remove('dark'),
+      onEnterBack:() => ring.classList.add('dark'),
+      onLeaveBack:() => ring.classList.remove('dark'),
+    });
+  });
+
+  // ── Scroll progress ──
+  ScrollTrigger.create({
+    start: 'top top', end: 'bottom bottom',
+    onUpdate: s => document.getElementById('progress').style.width = (s.progress * 100) + '%'
+  });
+
+  // ── Preloader ──
+  const pre = gsap.timeline({ defaults: { ease: 'power2.out' } });
+  pre
+    .to('.pre-logo', {
+      opacity: 1,
+      scale: 1,
+      duration: 0.9,
+      ease: 'power2.out'
+    })
+    .to('#preloader', {
+      opacity: 0,
+      duration: 0.8,
+      delay: 0.6,
+      ease: 'power2.inOut',
+      onComplete: () => document.getElementById('preloader').style.display = 'none'
+    })
+
+  // ── Nav scroll ──
+  ScrollTrigger.create({
+    start: '80px top',
+    onEnter:    () => document.getElementById('nav').classList.add('scrolled'),
+    onLeaveBack:() => document.getElementById('nav').classList.remove('scrolled')
+  });
+
+  // ── Hamburger menu ──
+  const burger = document.getElementById('burger');
+  const menu   = document.getElementById('menu');
+  burger.addEventListener('click', () => {
+    const open = menu.classList.toggle('open');
+    burger.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+    lenis[open ? 'stop' : 'start']();
+  });
+  document.querySelectorAll('.m-link').forEach(l => {
+    l.addEventListener('click', () => {
+      menu.classList.remove('open');
+      burger.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      lenis.start();
+    });
+  });
+
+  // ── Generic scroll reveals (.rv) ──
+  document.querySelectorAll('.rv').forEach(el => {
+    const delay = parseFloat(getComputedStyle(el).getPropertyValue('--d') || el.style.getPropertyValue('--d') || '0');
+    gsap.fromTo(el,
+      { opacity: 0, y: 38 },
+      {
+        opacity: 1, y: 0, duration: 1.0, delay,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: el, start: 'top 87%',
+          toggleActions: 'play none none none'
+        }
+      }
+    );
+  });
+
+  // ── Generic fade reveals (.rv-fade) ──
+  document.querySelectorAll('.rv-fade').forEach(el => {
+    const delay = parseFloat(getComputedStyle(el).getPropertyValue('--d') || el.style.getPropertyValue('--d') || '0');
+    gsap.fromTo(el,
+      { opacity: 0 },
+      {
+        opacity: 1, duration: 1.1, delay,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: el, start: 'top 86%',
+          toggleActions: 'play none none none'
+        }
+      }
+    );
+  });
+
+  // ── Works cards: staggered reveal ──
+  gsap.utils.toArray('.wcard').forEach((card, i) => {
+    gsap.fromTo(card,
+      { opacity: 0, y: 50 },
+      {
+        opacity: 1, y: 0, duration: 1.0,
+        delay: (i % 3) * 0.1,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: card, start: 'top 90%',
+          toggleActions: 'play none none none'
+        }
+      }
+    );
+  });
+
+  // ── Hero Slideshow ──
+  const heroSlides   = gsap.utils.toArray('.hero-slide');
+  const heroCounter  = document.getElementById('heroCounter');
+  const heroDotsCon  = document.getElementById('heroDots');
+  const heroRing     = document.getElementById('hero-ring');
+  const HERO_INTERVAL = 5000; // ms per slide
+  let heroIdx  = 0;
+  let heroBurn = null;
+  let heroTimer = null;
+  let heroRingAnim = null;
+  const RING_CIRCUM = 2 * Math.PI * 23; // r=23
+
+  // Build dots
+  heroSlides.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'hero-dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => { heroGoTo(i); heroResetTimer(); });
+    heroDotsCon.appendChild(d);
+  });
+
+  function heroUpdateDots() {
+    heroDotsCon.querySelectorAll('.hero-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === heroIdx);
+    });
+  }
+
+  function heroStartBurn(slide) {
+    if (heroBurn) heroBurn.kill();
+    gsap.set(slide, { scale: 1.0 });
+    heroBurn = gsap.to(slide, { scale: 1.07, duration: 20, ease: 'none' });
+  }
+
+  function heroStartRing() {
+    if (!heroRing) return;
+    heroRing.style.strokeDasharray  = RING_CIRCUM;
+    heroRing.style.strokeDashoffset = RING_CIRCUM;
+    if (heroRingAnim) heroRingAnim.kill();
+    heroRingAnim = gsap.to(heroRing, {
+      strokeDashoffset: 0,
+      duration: HERO_INTERVAL / 1000,
+      ease: 'none'
+    });
+  }
+
+  function heroGoTo(next) {
+    const prev = heroIdx;
+    heroIdx = ((next % heroSlides.length) + heroSlides.length) % heroSlides.length;
+    if (prev === heroIdx) return;
+    gsap.to(heroSlides[prev],    { opacity: 0, scale: 1.0, duration: 1.0, ease: 'power2.inOut' });
+    gsap.to(heroSlides[heroIdx], { opacity: 1,              duration: 1.0, ease: 'power2.inOut' });
+    heroCounter.textContent =
+      String(heroIdx + 1).padStart(2, '0') + ' / ' + String(heroSlides.length).padStart(2, '0');
+    heroUpdateDots();
+    heroStartBurn(heroSlides[heroIdx]);
+    heroStartRing();
+  }
+
+  function heroResetTimer() {
+    clearInterval(heroTimer);
+    heroTimer = setInterval(() => heroGoTo(heroIdx + 1), HERO_INTERVAL);
+  }
+
+  document.querySelector('.hero-arrow--prev').addEventListener('click', () => { heroGoTo(heroIdx - 1); heroResetTimer(); });
+  document.querySelector('.hero-arrow--next').addEventListener('click', () => { heroGoTo(heroIdx + 1); heroResetTimer(); });
+
+  // Pause on hover
+  document.getElementById('hero').addEventListener('mouseenter', () => {
+    clearInterval(heroTimer);
+    if (heroRingAnim) heroRingAnim.pause();
+  });
+  document.getElementById('hero').addEventListener('mouseleave', () => {
+    heroResetTimer();
+    if (heroRingAnim) heroRingAnim.resume();
+  });
+
+  heroStartBurn(heroSlides[0]);
+  heroStartRing();
+  heroResetTimer();
+
+  // ── Five Elements: strip accordion entrance ──
+  gsap.fromTo('.el-intro',
+    { opacity: 0, y: 22 },
+    {
+      opacity: 1, y: 0, duration: 0.75, ease: 'power2.out',
+      scrollTrigger: { trigger: '#elements', start: 'top 82%' }
+    }
+  );
+  gsap.fromTo('.el-strip',
+    { scaleY: 0.94, opacity: 0 },
+    {
+      scaleY: 1, opacity: 1,
+      duration: 0.65, stagger: 0.07, ease: 'power2.out',
+      transformOrigin: 'bottom center',
+      scrollTrigger: { trigger: '.el-strips', start: 'top 85%' }
+    }
+  );
+
+  // ── Materials panels: staggered entrance ──
+  gsap.fromTo('.mat-panel',
+    { opacity: 0, y: 30 },
+    {
+      opacity: 1, y: 0, duration: 0.9, stagger: 0.08,
+      ease: 'power2.out',
+      scrollTrigger: { trigger: '.mat-stage', start: 'top 85%' }
+    }
+  );
+
+  // ── Materials panels: cursor spotlight + parallax ──
+  document.querySelectorAll('.mat-panel').forEach(panel => {
+    const bg = panel.querySelector('.mat-panel-bg');
+    panel.addEventListener('mousemove', e => {
+      const r = panel.getBoundingClientRect();
+      const x = ((e.clientX - r.left)  / r.width)  * 100;
+      const y = ((e.clientY - r.top)   / r.height) * 100;
+      panel.style.setProperty('--sx', x + '%');
+      panel.style.setProperty('--sy', y + '%');
+      bg.style.transform = `translate(${(x - 50) * 0.02}%, ${(y - 50) * 0.02}%)`;
+    });
+    panel.addEventListener('mouseleave', () => { bg.style.transform = ''; });
+  });
+</script>
+</body>
+</html>

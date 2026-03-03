@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Reference files (not part of the site)
+alexisdornier_com.html
+www_oharchitecture_com_au.html
+www_yllw_com.html
+screencapture-*.png
+"BRAND GUIDELINES (1) 2.pdf"
+
+# Editor
+.vscode/
+*.swp
